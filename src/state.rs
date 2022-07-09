@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::Addr;
-use cw_storage_plus::Item;
+use cw_storage_plus::{Item, Map};
 
 // we rename State -> Config bc it can get confusing with this being state.rs
 
@@ -12,6 +12,12 @@ pub struct Config {
     pub admin_address: Addr,
 }
 
+// creating a poll which lets us store the POLLS on chain
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Poll {
+
+}
+
 // we can get the data like config.admint_address
 
 // an Item of State which is in the storage_key "state".
@@ -19,3 +25,7 @@ pub struct Config {
 // CONFIG is all caps = Constant. So in storage it will be prefixed with "config" for the section
 // This data is stored on the blockchain
 pub const CONFIG: Item<Config> = Item::new("config");
+
+// creates a way to save polls -> the chain
+// String1 -> Poll1, String2 -> Poll2, etc.
+pub const POLLS: Map<String, Poll> = Map::new("polls");
