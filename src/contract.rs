@@ -5,7 +5,7 @@ use cw2::set_contract_version; // cw2 is a spec which lets users have contract m
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::Config;
+use crate::state::{Config, CONFIG};
 
 const CONTRACT_NAME: &str = "crates.io:zero-to-hero-discord";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION"); // Config.toml -> [package] -> version
@@ -32,7 +32,13 @@ pub fn instantiate(
         admin_address: validated_address_address,    
     };
 
-    unimplemented!()
+    // we need to save config -> state on chain.
+    // So now we save this config to the storage on chain
+    CONFIG.save(deps.storage, &config)?;
+
+    // returns a result response Result<Response>
+    // This has been successful, create a blank response.
+    Ok(Response::new().add_attribute("action", "instantiate"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
