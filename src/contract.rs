@@ -16,7 +16,7 @@ pub fn instantiate(
     _deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: InstantiateMsg,
+    _msg: InstantiateMsg, // Set up the contract
 ) -> Result<Response, ContractError> {
     unimplemented!()
 }
@@ -26,14 +26,14 @@ pub fn execute(
     _deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: ExecuteMsg,
+    _msg: ExecuteMsg, // write data
 ) -> Result<Response, ContractError> {
     unimplemented!()
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!()
+    unimplemented!() // get data from the contract
 }
 
 #[cfg(test)]
