@@ -24,9 +24,11 @@ pub fn instantiate(
     // saving a variable -> the deps.api address validate function
     // we pass by value which is the admin_address, so &msg.admin_address gets the admin address we defined in the message.
     // This errors our if the users address is not valid. If we input "foo" = fail. If you put a juno address = success
+    // If its successfull, it returns the type Addr (address) as we wanted
     let validated_address_address = deps.api.addr_validate(&msg.admin_address)?;
 
     let config = Config {
+        // we created a config with the admin address we wanted to be in the contract when we created it
         admin_address: validated_address_address,    
     };
 
