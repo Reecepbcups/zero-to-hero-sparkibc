@@ -12,22 +12,24 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION"); // Config.toml -> [pac
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    _msg: InstantiateMsg, // Set up the contract
+    _env: Env, // stores environment variables in the contract, such as the contract address, block height, block time, chain-id, transaction
+    _info: MessageInfo, // metadata of the address _info.sender = our address. We could use this for our admin address. _info.funds = funds from the chain
+    msg: InstantiateMsg, // Set up the contract
 ) -> Result<Response, ContractError> {
     // deps.storage - DepsMut is a mutuable/Changable section which we can alter.
     // ?; -> if there is an error, it will stop the contract from running (unwraps the error, think of it like a null check, of null panic() basically)
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    msg.admin_address.parse()?;
+    
     unimplemented!()
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     _deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    _msg: ExecuteMsg, // write data
+    _env: Env, 
+    _info: MessageInfo, 
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     unimplemented!()
 }
