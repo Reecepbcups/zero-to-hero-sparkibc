@@ -5,7 +5,7 @@ use cw2::set_contract_version; // cw2 is a spec which lets users have contract m
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{Config, CONFIG};
+use crate::state::{Config, CONFIG, Poll, POLLS};
 
 const CONTRACT_NAME: &str = "crates.io:zero-to-hero-discord";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION"); // Config.toml -> [package] -> version
@@ -45,12 +45,26 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
-    _env: Env, 
-    _info: MessageInfo, 
-    _msg: ExecuteMsg,
+    // we remove the _'s so we can actually use them
+    deps: DepsMut,
+    env: Env, 
+    info: MessageInfo, 
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    unimplemented!()
+    match msg {
+        ExecuteMsg::CreatePoll { question } => execute_create_poll(deps, env, info, question),
+        
+    }
+}
+
+// we can call anything, but smart to prefix with execute_
+fn execute_create_poll(deps: DepsMut, _env: Env, _info: MessageInfo, question: String) -> Result<Response, ContractError> {
+    // create poll in memory
+    let poll = Poll { question: question.clone(), yes_votes: 0, no_votes: 0 };
+    // save poll to chain
+    POLLS.save(deps.storage, question, &poll)?;
+    // tell user they were success
+    Ok(Response::new().add_attribute("action", "create_poll"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
