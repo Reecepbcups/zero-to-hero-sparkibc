@@ -8,4 +8,6 @@ pub enum ContractError {
 
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
+    // This val string is subsituted into the error message.
+    // ex: "Custom Error val: "
 }
