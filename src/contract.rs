@@ -1,10 +1,11 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-use cw2::set_contract_version; // cw2 is a spec which lets users have contract metadata (name, version)
+use cw2::set_contract_version; // cw2 is a spec which lets users have contract meta&data (name, version)
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::state::Config;
 
 const CONTRACT_NAME: &str = "crates.io:zero-to-hero-discord";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION"); // Config.toml -> [package] -> version
@@ -19,8 +20,16 @@ pub fn instantiate(
     // deps.storage - DepsMut is a mutuable/Changable section which we can alter.
     // ?; -> if there is an error, it will stop the contract from running (unwraps the error, think of it like a null check, of null panic() basically)
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    msg.admin_address.parse()?;
     
+    // saving a variable -> the deps.api address validate function
+    // we pass by value which is the admin_address, so &msg.admin_address gets the admin address we defined in the message.
+    // This errors our if the users address is not valid. If we input "foo" = fail. If you put a juno address = success
+    let validated_address_address = deps.api.addr_validate(&msg.admin_address)?;
+
+    let config = Config {
+        admin_address: validated_address_address,    
+    };
+
     unimplemented!()
 }
 
