@@ -1,10 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, to_binary};
 use cw2::set_contract_version; // cw2 is a spec which lets users have contract meta&data (name, version)
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, GetPollReponse};
 use crate::state::{Config, CONFIG, Poll, POLLS};
 
 const CONTRACT_NAME: &str = "crates.io:zero-to-hero-discord";
@@ -94,15 +94,31 @@ fn execute_vote(deps: DepsMut, _env: Env, _info: MessageInfo, question: String, 
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!() // get data from the contract
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    // get data from the contract
+    match msg {
+        QueryMsg::GetPoll { question } => query_get_poll(deps, env, question),
+        // QueryMsg::GetConfig { } => Config.
+    }
+}
+
+fn query_get_poll(deps: Deps, _env: Env, question: String) -> StdResult<Binary> {
+    // encoded binary result
+    let poll = POLLS.may_load(deps.storage, question)?;
+    to_binary(&GetPollReponse { poll })
 }
 
 #[cfg(test)]
 mod tests {
+    use cosmwasm_std::from_binary;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use crate::msg::{InstantiateMsg, ExecuteMsg};
-    use crate::contract::execute;
+    use crate::msg::{InstantiateMsg, ExecuteMsg, GetPollReponse, QueryMsg};
+    use crate::contract::{execute, query};
+    use crate::state::Poll;
+    // import Addr
+    // use cosmwasm_std::Addr;
+    // import Config
+    // use crate::state::Config;
 
     use super::instantiate;
 
@@ -123,6 +139,12 @@ mod tests {
         
         // check the response
         assert_eq!(response.attributes, vec![("action".to_string(), "instantiate".to_string())]);
+
+        // wait for youtube video to finish
+        // let msg = QueryMsg::GetConfig {};
+        // let resp = query(deps, env, msg).unwrap();
+        // let config: Config = from_binary(&resp).unwrap();
+        // assert_eq!(config.admin_address, Addr::unchecked("addr1"));
     }
 
     #[test]
@@ -179,6 +201,20 @@ mod tests {
             choice: "no".to_string(),
         };
         let _resp = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+
+        let msg = QueryMsg::GetPoll {
+            question: "Do you love spark IBC?".to_string(),
+        };
+
+        // as ref is just a reference, since we are only reading from it
+        let resp = query(deps.as_ref(), env.clone(), msg.clone()).unwrap();
+        let get_polls_response: GetPollReponse = from_binary(&resp).unwrap();
+        assert_eq!(get_polls_response, GetPollReponse { poll: Some(Poll {
+                question: "Do you love spark IBC?".to_string(),
+                yes_votes: 1,
+                no_votes: 0,
+            }
+        )});
 
         // ERROR case, vote on poll that exists with invalid option
         let msg = ExecuteMsg::Vote {

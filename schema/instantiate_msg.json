@@ -3,10 +3,10 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "val"
+    "admin_address"
   ],
   "properties": {
-    "val": {
+    "admin_address": {
       "type": "string"
     }
   }

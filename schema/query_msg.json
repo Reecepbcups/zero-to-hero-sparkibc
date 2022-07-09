@@ -5,16 +5,16 @@
     {
       "type": "object",
       "required": [
-        "custom_msg"
+        "get_poll"
       ],
       "properties": {
-        "custom_msg": {
+        "get_poll": {
           "type": "object",
           "required": [
-            "val"
+            "question"
           ],
           "properties": {
-            "val": {
+            "question": {
               "type": "string"
             }
           }

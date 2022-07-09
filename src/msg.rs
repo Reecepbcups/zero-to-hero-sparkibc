@@ -1,5 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use crate::state::Poll;
 
 // InstantiateMsg = Firsts off the start of the contract. Gets contract instance started (like a constructor in OOP).
 // ExecuteMsg = POST, PUT data -> a contract. Set some values, 
@@ -33,7 +34,16 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    CustomMsg { val: String },
+    GetPoll {
+        question: String, // question we want to answer (which poll we reply too)
+    },
+    // GetConfig {}
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct GetPollReponse {
+    pub poll: Option<Poll>, // null (None) or set
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

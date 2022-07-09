@@ -5,16 +5,40 @@
     {
       "type": "object",
       "required": [
-        "custom_msg"
+        "create_poll"
       ],
       "properties": {
-        "custom_msg": {
+        "create_poll": {
           "type": "object",
           "required": [
-            "val"
+            "question"
           ],
           "properties": {
-            "val": {
+            "question": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "vote"
+      ],
+      "properties": {
+        "vote": {
+          "type": "object",
+          "required": [
+            "choice",
+            "question"
+          ],
+          "properties": {
+            "choice": {
+              "type": "string"
+            },
+            "question": {
               "type": "string"
             }
           }
