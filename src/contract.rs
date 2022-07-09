@@ -1,11 +1,11 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, to_binary};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version; // cw2 is a spec which lets users have contract meta&data (name, version)
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, GetPollResponse};
-use crate::state::{Config, CONFIG, Poll, POLLS};
+use crate::msg::{ExecuteMsg, GetPollResponse, InstantiateMsg, QueryMsg};
+use crate::state::{Config, Poll, CONFIG, POLLS};
 
 const CONTRACT_NAME: &str = "crates.io:zero-to-hero-discord";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION"); // Config.toml -> [package] -> version
@@ -20,7 +20,7 @@ pub fn instantiate(
     // deps.storage - DepsMut is a mutuable/Changable section which we can alter.
     // ?; -> if there is an error, it will stop the contract from running (unwraps the error, think of it like a null check, of null panic() basically)
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    
+
     // saving a variable -> the deps.api address validate function
     // we pass by value which is the admin_address, so &msg.admin_address gets the admin address we defined in the message.
     // This errors our if the users address is not valid. If we input "foo" = fail. If you put a juno address = success
@@ -29,7 +29,7 @@ pub fn instantiate(
 
     let config = Config {
         // we created a config with the admin address we wanted to be in the contract when we created it
-        admin_address: validated_address_address,    
+        admin_address: validated_address_address,
     };
 
     // we need to save config -> state on chain.
@@ -47,35 +47,54 @@ pub fn instantiate(
 pub fn execute(
     // we remove the _'s so we can actually use them
     deps: DepsMut,
-    env: Env, 
-    info: MessageInfo, 
+    env: Env,
+    info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::CreatePoll { question } => execute_create_poll(deps, env, info, question),
-        ExecuteMsg::Vote { question, choice } => execute_vote(deps, env, info, question, choice),        
+        ExecuteMsg::Vote { question, choice } => execute_vote(deps, env, info, question, choice),
     }
 }
 
 // we can call anything, but smart to prefix with execute_
-fn execute_create_poll(deps: DepsMut, _env: Env, _info: MessageInfo, question: String) -> Result<Response, ContractError> {
+fn execute_create_poll(
+    deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    question: String,
+) -> Result<Response, ContractError> {
     // does the POLLS map already have the same key (question) of this value? if so we error out.
     if POLLS.has(deps.storage, question.clone()) {
-        return Err(ContractError::CustomError { val: "Key already taken!".to_string() });
+        return Err(ContractError::CustomError {
+            val: "Key already taken!".to_string(),
+        });
     }
 
     // create poll in memory
-    let poll = Poll { question: question.clone(), yes_votes: 0, no_votes: 0 };
+    let poll = Poll {
+        question: question.clone(),
+        yes_votes: 0,
+        no_votes: 0,
+    };
     // save poll to chain
     POLLS.save(deps.storage, question, &poll)?;
     // tell user they were success
     Ok(Response::new().add_attribute("action", "create_poll"))
 }
 
-fn execute_vote(deps: DepsMut, _env: Env, _info: MessageInfo, question: String, choice: String) -> Result<Response, ContractError> {
+fn execute_vote(
+    deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    question: String,
+    choice: String,
+) -> Result<Response, ContractError> {
     // error out if there no poll with this given Question (key) in the storage on chain
     if !POLLS.has(deps.storage, question.clone()) {
-        return Err(ContractError::CustomError { val: "Poll does not exist!".to_string() });
+        return Err(ContractError::CustomError {
+            val: "Poll does not exist!".to_string(),
+        });
     }
 
     let mut poll = POLLS.load(deps.storage, question.clone())?;
@@ -85,7 +104,9 @@ fn execute_vote(deps: DepsMut, _env: Env, _info: MessageInfo, question: String, 
     } else if choice == "no" {
         poll.no_votes += 1;
     } else {
-        return Err(ContractError::CustomError { val: "Unrecognized Choice!".to_string() });
+        return Err(ContractError::CustomError {
+            val: "Unrecognized Choice!".to_string(),
+        });
     }
 
     // saves poll -> chain with updated poll value (either +1 yes or +1 no)
@@ -98,7 +119,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     // get data from the contract
     match msg {
         QueryMsg::GetPoll { question } => query_get_poll(deps, env, question),
-        QueryMsg::GetConfig { } => to_binary(&CONFIG.load(deps.storage)?),
+        QueryMsg::GetConfig {} => to_binary(&CONFIG.load(deps.storage)?),
     }
 }
 
@@ -129,16 +150,23 @@ mod tests {
         };
 
         // forces the result, kind of like ? but we need to do it directly here
-        let response = instantiate(deps.as_mut(), env, info, msg).unwrap();
-        
-        // check the response
-        assert_eq!(response.attributes, vec![("action".to_string(), "instantiate".to_string())]);
+        let response = instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        // wait for youtube video to finish
-        // let msg = QueryMsg::GetConfig {};
-        // let resp = query(deps, env, msg).unwrap();
-        // let config: Config = from_binary(&resp).unwrap();
-        // assert_eq!(config.admin_address, Addr::unchecked("addr1"));
+        // check the response
+        assert_eq!(
+            response.attributes,
+            vec![("action".to_string(), "instantiate".to_string())]
+        );
+
+        let msg = QueryMsg::GetConfig {};
+        let resp = query(deps.as_ref(), env.clone(), msg).unwrap();
+        let config: Config = from_binary(&resp).unwrap();
+        assert_eq!(
+            config,
+            Config {
+                admin_address: Addr::unchecked("addr1")
+            }
+        );
     }
 
     #[test]
@@ -175,12 +203,11 @@ mod tests {
             }
         );
 
-    let msg = ExecuteMsg::CreatePoll {
-        question: "Do you love Spark IBC?".to_string(),
-    };
-    let _resp = execute(deps.as_mut(), env, info, msg).unwrap_err();
-}
-
+        let msg = ExecuteMsg::CreatePoll {
+            question: "Do you love Spark IBC?".to_string(),
+        };
+        let _resp = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    }
 
     #[test]
     fn test_poll_vote() {
