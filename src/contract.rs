@@ -17,6 +17,7 @@ pub fn instantiate(
     _msg: InstantiateMsg, // Set up the contract
 ) -> Result<Response, ContractError> {
     // deps.storage - DepsMut is a mutuable/Changable section which we can alter.
+    // ?; -> if there is an error, it will stop the contract from running (unwraps the error, think of it like a null check, of null panic() basically)
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     unimplemented!()
 }
