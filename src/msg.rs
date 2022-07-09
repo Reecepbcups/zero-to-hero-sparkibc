@@ -24,9 +24,10 @@ pub enum ExecuteMsg {
         // question is the question of the poll
         question: String,
     },
-    // Vote {
-    //     choice: String,
-    // }
+    Vote {
+        question: String, // question we want to answer (which poll we reply too)
+        choice: String, // 'yes' or 'no'
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

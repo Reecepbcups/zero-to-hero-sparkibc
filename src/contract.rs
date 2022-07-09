@@ -53,7 +53,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::CreatePoll { question } => execute_create_poll(deps, env, info, question),
-        
+        ExecuteMsg::Vote { question, choice } => execute_vote(deps, env, info, question, choice),        
     }
 }
 
@@ -70,6 +70,27 @@ fn execute_create_poll(deps: DepsMut, _env: Env, _info: MessageInfo, question: S
     POLLS.save(deps.storage, question, &poll)?;
     // tell user they were success
     Ok(Response::new().add_attribute("action", "create_poll"))
+}
+
+fn execute_vote(deps: DepsMut, _env: Env, _info: MessageInfo, question: String, choice: String) -> Result<Response, ContractError> {
+    // error out if there no poll with this given Question (key) in the storage on chain
+    if !POLLS.has(deps.storage, question.clone()) {
+        return Err(ContractError::CustomError { val: "Poll does not exist!".to_string() });
+    }
+
+    let mut poll = POLLS.load(deps.storage, question.clone())?;
+
+    if choice == "yes" {
+        poll.yes_votes += 1;
+    } else if choice == "no" {
+        poll.no_votes += 1;
+    } else {
+        return Err(ContractError::CustomError { val: "Unrecognized Choice!".to_string() });
+    }
+
+    // saves poll -> chain with updated poll value (either +1 yes or +1 no)
+    POLLS.save(deps.storage, question.clone(), &poll)?;
+    Ok(Response::new().add_attribute("action", "vote"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -112,14 +133,46 @@ mod tests {
         let msg = InstantiateMsg {
             admin_address: "addr1".to_string(),
         };
-        let response = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        let _response = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
         let msg = ExecuteMsg::CreatePoll {
             question: "What is your favorite color?".to_string(),
         };
-
-        let response = execute(deps.as_mut(), env, info, msg).unwrap();
+        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
         assert_eq!(response.attributes, vec![("action".to_string(), "create_poll".to_string())]);
-                
+
+        // // lets create a poll this time with the same question so it fails & we can check the error
+        // let msg = ExecuteMsg::CreatePoll {
+        //     question: "What is your favorite color?".to_string(),
+        // };
+        // let response = execute(deps.as_mut(), env, info, msg).unwrap_err();
+        // assert_eq!(response, "Key already taken!".to_string());       
     }
+
+
+    #[test]
+    fn test_poll_vote() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+        let info = mock_info("addr1", &[]);
+        let msg = InstantiateMsg {
+            admin_address: "addr1".to_string(),
+        };
+        let _response = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        let msg = ExecuteMsg::CreatePoll {
+            question: "Do you love spark IBC?".to_string(),
+        };
+        let _response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        // success case, vote on poll with valid option
+        let msg = ExecuteMsg::Vote {
+            question: "Do you love spark IBC?".to_string(),
+            choice: "yes".to_string(),
+        };
+        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        assert_eq!(response.attributes, vec![("action".to_string(), "vote".to_string())]);
+    }
+
+
 }
