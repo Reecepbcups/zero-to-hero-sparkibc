@@ -172,6 +172,22 @@ mod tests {
         };
         let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
         assert_eq!(response.attributes, vec![("action".to_string(), "vote".to_string())]);
+
+        // ERROR case, vote on poll that does not exist
+        let msg = ExecuteMsg::Vote {
+            question: "This is not a valid question!".to_string(),
+            choice: "no".to_string(),
+        };
+        let _resp = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+
+        // ERROR case, vote on poll that exists with invalid option
+        let msg = ExecuteMsg::Vote {
+            question: "Do you love spark IBC?".to_string(),
+            choice: "this is not a valid choice".to_string(),
+        };
+        let _resp = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+
+
     }
 
 
