@@ -20,10 +20,13 @@ pub struct InstantiateMsg { // schema/instantiate_msg.json when you run `cargo s
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    CreatePoll {
+    CreatePoll { // ExecuteMsg::CreatePoll { question: "Do you love Spark IBC?" }
         // question is the question of the poll
         question: String,
     },
+    // Vote {
+    //     choice: String,
+    // }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
