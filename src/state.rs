@@ -30,4 +30,5 @@ pub const CONFIG: Item<Config> = Item::new("config");
 
 // creates a way to save polls -> the chain
 // String1 -> Poll1, String2 -> Poll2, etc.
+// Ex: "Do you love Spark IBC?" -> Poll{ question: "Do you love Spark IBC?", yes_votes: 0, no_votes: 0 }
 pub const POLLS: Map<String, Poll> = Map::new("polls");
