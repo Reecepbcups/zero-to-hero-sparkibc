@@ -11,11 +11,13 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION"); // Config.toml -> [pac
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg, // Set up the contract
 ) -> Result<Response, ContractError> {
+    // deps.storage - DepsMut is a mutuable/Changable section which we can alter.
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     unimplemented!()
 }
 
