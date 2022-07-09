@@ -39,6 +39,8 @@ pub fn instantiate(
     // returns a result response Result<Response>
     // This has been successful, create a blank response.
     Ok(Response::new().add_attribute("action", "instantiate"))
+
+    // we need to write unit test now to confirm this code actually works, so we make at the bottom
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -46,7 +48,7 @@ pub fn execute(
     _deps: DepsMut,
     _env: Env, 
     _info: MessageInfo, 
-    msg: ExecuteMsg,
+    _msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     unimplemented!()
 }
@@ -57,4 +59,28 @@ pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use crate::msg::InstantiateMsg;
+
+    use super::instantiate;
+
+    // mocking = fake testing values given by the chain
+
+    #[test]
+    fn test_instantiate() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+        // we dont require funds to be sent in, so we set a blank array/list of funds.
+        let info = mock_info("addr1", &[]);
+        let msg = InstantiateMsg {
+            admin_address: "addr1".to_string(),
+        };
+
+        // forces the result, kind of like ? but we need to do it directly here
+        let response = instantiate(deps.as_mut(), env, info, msg).unwrap();
+        
+        // check the response
+        assert_eq!(response.attributes, vec![("action".to_string(), "instantiate".to_string())]);
+    }
+}
