@@ -17,4 +17,5 @@ pub struct Config {
 // an Item of State which is in the storage_key "state".
 // This key HAS to be unique like a KV Store
 // CONFIG is all caps = Constant. So in storage it will be prefixed with "config" for the section
+// This data is stored on the blockchain
 pub const CONFIG: Item<Config> = Item::new("config");

@@ -11,7 +11,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg { // schema/instantiate_msg.json when you run `cargo schema`
-    pub val: String,
+    // when we create a contract, we should let them put in an admin address as a string.
+    // This has to be defined before hand so we know the admin of this contract
+    // It is a string & we will confirm it is an Address (Addr) when we try to Instantiate it
+    pub admin_address: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
