@@ -4,7 +4,10 @@
 ### Polling APP like starpoll on chain 
 
 
-**notes**
+**Callum's Official Repo**
+https://github.com/Callum-A/spark-ibc-cosmwasm-zero-to-hero
+
+**layout**
 ```
 src/ folder (template generated for you)
 
@@ -18,3 +21,6 @@ msg.rs - holds messages which we use in the project & has more info in there.
 
 state.rs - storage of the contract via Maps / Key Value Stores
 ```
+
+**notes**
+notes can be found in each contract rust file (*.rs)

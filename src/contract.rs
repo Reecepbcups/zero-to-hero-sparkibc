@@ -4,7 +4,7 @@ use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 use cw2::set_contract_version; // cw2 is a spec which lets users have contract meta&data (name, version)
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, GetPollReponse};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, GetPollResponse};
 use crate::state::{Config, CONFIG, Poll, POLLS};
 
 const CONTRACT_NAME: &str = "crates.io:zero-to-hero-discord";
@@ -98,29 +98,23 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     // get data from the contract
     match msg {
         QueryMsg::GetPoll { question } => query_get_poll(deps, env, question),
-        // QueryMsg::GetConfig { } => Config.
+        QueryMsg::GetConfig { } => to_binary(&CONFIG.load(deps.storage)?),
     }
 }
 
 fn query_get_poll(deps: Deps, _env: Env, question: String) -> StdResult<Binary> {
     // encoded binary result
     let poll = POLLS.may_load(deps.storage, question)?;
-    to_binary(&GetPollReponse { poll })
+    to_binary(&GetPollResponse { poll })
 }
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::from_binary;
+    use crate::contract::{execute, instantiate, query};
+    use crate::msg::{ExecuteMsg, GetPollResponse, InstantiateMsg, QueryMsg};
+    use crate::state::{Config, Poll};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use crate::msg::{InstantiateMsg, ExecuteMsg, GetPollReponse, QueryMsg};
-    use crate::contract::{execute, query};
-    use crate::state::Poll;
-    // import Addr
-    // use cosmwasm_std::Addr;
-    // import Config
-    // use crate::state::Config;
-
-    use super::instantiate;
+    use cosmwasm_std::{attr, from_binary, Addr};
 
     // mocking = fake testing values given by the chain
 
@@ -155,21 +149,37 @@ mod tests {
         let msg = InstantiateMsg {
             admin_address: "addr1".to_string(),
         };
-        let _response = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        // Before you execute a contract you need to instantiate it
+        let _resp = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
         let msg = ExecuteMsg::CreatePoll {
-            question: "What is your favorite color?".to_string(),
+            question: "Do you love Spark IBC?".to_string(),
         };
-        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-        assert_eq!(response.attributes, vec![("action".to_string(), "create_poll".to_string())]);
+        let resp = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        assert_eq!(resp.attributes, vec![attr("action", "create_poll")]);
 
-        // // lets create a poll this time with the same question so it fails & we can check the error
-        // let msg = ExecuteMsg::CreatePoll {
-        //     question: "What is your favorite color?".to_string(),
-        // };
-        // let response = execute(deps.as_mut(), env, info, msg).unwrap_err();
-        // assert_eq!(response, "Key already taken!".to_string());       
-    }
+        let msg = QueryMsg::GetPoll {
+            question: "Do you love Spark IBC?".to_string(),
+        };
+        let resp = query(deps.as_ref(), env.clone(), msg).unwrap();
+        let get_poll_response: GetPollResponse = from_binary(&resp).unwrap();
+        assert_eq!(
+            get_poll_response,
+            GetPollResponse {
+                poll: Some(Poll {
+                    question: "Do you love Spark IBC?".to_string(),
+                    yes_votes: 0,
+                    no_votes: 0
+                })
+            }
+        );
+
+    let msg = ExecuteMsg::CreatePoll {
+        question: "Do you love Spark IBC?".to_string(),
+    };
+    let _resp = execute(deps.as_mut(), env, info, msg).unwrap_err();
+}
 
 
     #[test]
@@ -178,53 +188,54 @@ mod tests {
         let env = mock_env();
         let info = mock_info("addr1", &[]);
         let msg = InstantiateMsg {
-            admin_address: "addr1".to_string(),
+            admin_address: "addr1".to_string(), // String, String::from("addr1")
         };
-        let _response = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
+        // Before you execute a contract you need to instantiate it
+        let _resp = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        // We need a poll to vote on!
         let msg = ExecuteMsg::CreatePoll {
-            question: "Do you love spark IBC?".to_string(),
+            question: "Do you love Spark IBC?".to_string(),
         };
-        let _response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        let _resp = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
-        // success case, vote on poll with valid option
+        // Success case, we vote on a poll that exists, with a valid option
         let msg = ExecuteMsg::Vote {
-            question: "Do you love spark IBC?".to_string(),
+            question: "Do you love Spark IBC?".to_string(),
             choice: "yes".to_string(),
         };
-        let response = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
-        assert_eq!(response.attributes, vec![("action".to_string(), "vote".to_string())]);
+        let resp = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        assert_eq!(resp.attributes, vec![attr("action", "vote"),]);
 
-        // ERROR case, vote on poll that does not exist
+        let msg = QueryMsg::GetPoll {
+            question: "Do you love Spark IBC?".to_string(),
+        };
+        let resp = query(deps.as_ref(), env.clone(), msg).unwrap();
+        let get_poll_response: GetPollResponse = from_binary(&resp).unwrap();
+        assert_eq!(
+            get_poll_response,
+            GetPollResponse {
+                poll: Some(Poll {
+                    question: "Do you love Spark IBC?".to_string(),
+                    yes_votes: 1,
+                    no_votes: 0
+                })
+            }
+        );
+
+        // Error case 1: we vote on a poll that does not exist
         let msg = ExecuteMsg::Vote {
-            question: "This is not a valid question!".to_string(),
+            question: "Do you hate Spark IBC?".to_string(),
             choice: "no".to_string(),
         };
         let _resp = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
 
-        let msg = QueryMsg::GetPoll {
-            question: "Do you love spark IBC?".to_string(),
-        };
-
-        // as ref is just a reference, since we are only reading from it
-        let resp = query(deps.as_ref(), env.clone(), msg.clone()).unwrap();
-        let get_polls_response: GetPollReponse = from_binary(&resp).unwrap();
-        assert_eq!(get_polls_response, GetPollReponse { poll: Some(Poll {
-                question: "Do you love spark IBC?".to_string(),
-                yes_votes: 1,
-                no_votes: 0,
-            }
-        )});
-
-        // ERROR case, vote on poll that exists with invalid option
+        // Error case 2: we vote on a poll that exists, but with an invalid choice
         let msg = ExecuteMsg::Vote {
-            question: "Do you love spark IBC?".to_string(),
-            choice: "this is not a valid choice".to_string(),
+            question: "Do you love Spark IBC?".to_string(),
+            choice: "maybe".to_string(),
         };
-        let _resp = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
-
-
+        let _resp = execute(deps.as_mut(), env, info, msg).unwrap_err();
     }
-
-
 }

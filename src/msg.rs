@@ -37,19 +37,13 @@ pub enum QueryMsg {
     GetPoll {
         question: String, // question we want to answer (which poll we reply too)
     },
-    // GetConfig {}
+    GetConfig {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct GetPollReponse {
+pub struct GetPollResponse {
     pub poll: Option<Poll>, // null (None) or set
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct CustomResponse {
-    val: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

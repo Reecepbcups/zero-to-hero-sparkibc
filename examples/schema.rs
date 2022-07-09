@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use zero_to_hero_discord::msg::{CustomResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use zero_to_hero_discord::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use zero_to_hero_discord::state::Config;
 
 fn main() {
@@ -16,5 +16,4 @@ fn main() {
     export_schema(&schema_for!(ExecuteMsg), &out_dir);
     export_schema(&schema_for!(QueryMsg), &out_dir);
     export_schema(&schema_for!(Config), &out_dir);
-    export_schema(&schema_for!(CustomResponse), &out_dir);
 }
