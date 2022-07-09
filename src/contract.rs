@@ -59,6 +59,11 @@ pub fn execute(
 
 // we can call anything, but smart to prefix with execute_
 fn execute_create_poll(deps: DepsMut, _env: Env, _info: MessageInfo, question: String) -> Result<Response, ContractError> {
+    // does the POLLS map already have the same key (question) of this value? if so we error out.
+    if POLLS.has(deps.storage, question.clone()) {
+        return Err(ContractError::CustomError { val: "Key already taken!".to_string() });
+    }
+
     // create poll in memory
     let poll = Poll { question: question.clone(), yes_votes: 0, no_votes: 0 };
     // save poll to chain
@@ -75,7 +80,8 @@ pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use crate::msg::InstantiateMsg;
+    use crate::msg::{InstantiateMsg, ExecuteMsg};
+    use crate::contract::execute;
 
     use super::instantiate;
 
@@ -96,5 +102,24 @@ mod tests {
         
         // check the response
         assert_eq!(response.attributes, vec![("action".to_string(), "instantiate".to_string())]);
+    }
+
+    #[test]
+    fn test_create_poll() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+        let info = mock_info("addr1", &[]);
+        let msg = InstantiateMsg {
+            admin_address: "addr1".to_string(),
+        };
+        let response = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        let msg = ExecuteMsg::CreatePoll {
+            question: "What is your favorite color?".to_string(),
+        };
+
+        let response = execute(deps.as_mut(), env, info, msg).unwrap();
+        assert_eq!(response.attributes, vec![("action".to_string(), "create_poll".to_string())]);
+                
     }
 }
